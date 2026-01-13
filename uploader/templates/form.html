@@ -8,10 +8,14 @@
 <body>
 <form method="POST">
   {% csrf_token %}
-  Name: <input name="name"><br>
-  Email: <input name="email"><br>
-  Amount: <input name="amount"><br>
+  Name: <input name="name" required><br>
+  Email: <input name="email" required><br>
+  Amount: <input name="amount" type="number" required><br>
   <button type="submit">Submit</button>
+
+  {% if error %}
+    <p style="color:red;">{{ error }}</p>
+  {% endif %}
 </form>
 
 </body>
