@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+        }
+
+        .navbar {
+            background: #2c3e50;
+            padding: 14px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        .menu a {
+            color: white;
+            text-decoration: none;
+            margin-right: 25px;
+            font-weight: 500;
+        }
+
+        .menu a:hover {
+            text-decoration: underline;
+        }
+
+        .role {
+            background: #3498db;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <div class="menu">
+        <a href="{% url 'dashboard' %}">Home</a>
+        <a href="{% url 'student_info' %}">Student Info</a>
+        <a href="{% url 'fee_payment' %}">Fee Payment</a>
+        <a href="{% url 'update_student' %}">Update Student</a>
+        <a href="{% url 'data_analysis' %}">Data Analysis</a>
+    </div>
+
+    <div class="role">
+    {{ request.session.role|default:"User" }}
+</div>
+
+
+</div>
+
+<div class="content">
+    {% block content %}{% endblock %}
+</div>
+
+</body>
+</html>

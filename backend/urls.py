@@ -28,3 +28,5 @@ urlpatterns = [
     path('', include('uploader.urls')),
     path('admin/', admin.site.urls),
 ]
+
+
