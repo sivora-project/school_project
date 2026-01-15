@@ -39,6 +39,20 @@
         .content {
             padding: 30px;
         }
+        .logout-btn {
+        background: #e74c3c;
+        color: white;
+        padding: 6px 14px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        }
+
+        .logout-btn:hover {
+            background: #c0392b;
+        }
+
     </style>
 </head>
 <body>
@@ -51,10 +65,20 @@
         <a href="{% url 'update_student' %}">Update Student</a>
         <a href="{% url 'data_analysis' %}">Data Analysis</a>
     </div>
-
+    <div style="display:flex; align-items:center; gap:12px;">
+    <!-- Role badge -->
     <div class="role">
-    {{ request.session.role|default:"User" }}
-</div>
+        {{ request.session.role|default:"User" }}
+    </div>
+
+    <!-- Logout button -->
+    <a href="{% url 'logout' %}" class="logout-btn">Logout</a>
+    </div>
+
+
+    </div>
+
+
 
 
 </div>

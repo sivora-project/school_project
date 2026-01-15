@@ -76,26 +76,26 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'neondb'),
-        'USER': os.getenv('DB_USER', 'neondb_owner'),
-        'PASSWORD': os.getenv('DB_PASSWORD'),
-        'HOST': os.getenv('DB_HOST'),
-        'PORT': os.getenv('DB_PORT', '5432'),
-    }
-}
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'neondb',
-#         'USER':  'neondb_owner',
-#         'PASSWORD': 'npg_K7bsVjny4rLt',
-#         'HOST': 'ep-summer-fog-a1fiwx7g.ap-southeast-1.aws.neon.tech',
-#         'PORT': '5432',
+#         'NAME': os.getenv('DB_NAME', 'neondb'),
+#         'USER': os.getenv('DB_USER', 'neondb_owner'),
+#         'PASSWORD': os.getenv('DB_PASSWORD'),
+#         'HOST': os.getenv('DB_HOST'),
+#         'PORT': os.getenv('DB_PORT', '5432'),
 #     }
 # }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'neondb',
+        'USER':  'neondb_owner',
+        'PASSWORD': 'npg_K7bsVjny4rLt',
+        'HOST': 'ep-summer-fog-a1fiwx7g.ap-southeast-1.aws.neon.tech',
+        'PORT': '5432',
+    }
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators

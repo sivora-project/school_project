@@ -4,6 +4,7 @@ from django.contrib.auth import login,logout
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
 from .models import UserCredential
+from django.contrib.auth.decorators import login_required
 
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -41,11 +42,15 @@ def user_login(request):
 
 
 def user_logout(request):
+
     logout(request)
-    return redirect('login_page.html')
+    request.session.flush()
+    messages.success(request, "Logged out successfully")
+    return redirect('login')
 
 
-from django.contrib.auth.decorators import login_required
+
+
 
 @login_required
 def dashboard(request):
