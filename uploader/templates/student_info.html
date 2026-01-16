@@ -1,6 +1,106 @@
 {% extends 'base.html' %}
-
 {% block content %}
-<h2>Student Information</h2>
-<p>Student details will appear here.</p>
+
+<h3 class="mb-3">🎓 Student Information</h3>
+
+<form method="get" class="card p-3 mb-4">
+    <div class="row align-items-center">
+        <div class="col-md-4">
+            <label>
+                <input type="radio" name="view_type" value="individual" checked>
+                Individual Student
+            </label>
+        </div>
+        <div class="col-md-3">
+            <input type="text" name="student_id" class="form-control" placeholder="Student PEN">
+        </div>
+        <div class="col-md-3">
+            <input type="text" name="student_name" class="form-control" placeholder="Student Name">
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100">Search</button>
+        </div>
+    </div>
+</form>
+
+{% if no_data %}
+<div class="alert alert-warning">No student found.</div>
+{% endif %}
+
+{% if show_dashboard %}
+<div class="row">
+
+    <!-- 70% DETAILS -->
+    <div class="col-md-8">
+
+        <div class="card mb-3">
+            <div class="card-body">
+                <h4>{{ student.name }}</h4>
+                <p class="text-muted">Student PEN: {{ student.student_pen }}</p>
+            </div>
+        </div>
+
+        <div class="row text-center mb-3">
+            <div class="col"><div class="card p-3">Working Days<br><b>{{ total_working_days }}</b></div></div>
+            <div class="col"><div class="card p-3 text-success">Present<br><b>{{ present_days }}</b></div></div>
+            <div class="col"><div class="card p-3 text-danger">Absent<br><b>{{ absent_days }}</b></div></div>
+            <div class="col"><div class="card p-3">Streak<br><b>{{ longest_streak }}</b></div></div>
+        </div>
+
+        <div class="card p-3">
+            <h5>📘 Subject-wise Marks</h5>
+            <table class="table table-bordered">
+                <tr><th>Subject</th><th>Marks</th></tr>
+                {% for m in subject_marks %}
+                <tr>
+                    <td>{{ m.subject }}</td>
+                    <td>{{ m.marks }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+            <p><b>Total:</b> {{ marks_obtained }} / {{ total_marks }}</p>
+        </div>
+
+    </div>
+
+    <!-- 30% CHARTS -->
+    <div class="col-md-4">
+        <div class="card p-3 mb-3">
+            <h6>Attendance</h6>
+            <canvas id="attendanceChart"></canvas>
+        </div>
+
+        <div class="card p-3">
+            <h6>Marks</h6>
+            <canvas id="marksChart"></canvas>
+        </div>
+    </div>
+
+</div>
+
+<script>
+new Chart(document.getElementById('attendanceChart'), {
+    type: 'pie',
+    data: {
+        labels: ['Present', 'Absent'],
+        datasets: [{
+            data: [{{ attendance_present }}, {{ attendance_absent }}],
+            backgroundColor: ['#4CAF50', '#F44336']
+        }]
+    }
+});
+
+new Chart(document.getElementById('marksChart'), {
+    type: 'bar',
+    data: {
+        labels: [{% for m in subject_marks %}'{{ m.subject }}',{% endfor %}],
+        datasets: [{
+            data: [{% for m in subject_marks %}{{ m.scored_marks }},{% endfor %}],
+            backgroundColor: '#2196F3'
+        }]
+    }
+});
+</script>
+
+{% endif %}
 {% endblock %}

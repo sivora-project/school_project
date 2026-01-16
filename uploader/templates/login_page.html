@@ -9,7 +9,7 @@
         body {
             margin: 0;
             height: 100vh;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: white;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -75,125 +75,191 @@
 <body>
 
 
+
+
+</body>
+</html>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login | Student Portal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            background:#f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* Floating Icons */
+        .floating-icons span {
+            position: absolute;
+            font-size: 34px;
+            opacity: 0.18;
+            animation: float 14s infinite linear;
+        }
+
+        .floating-icons span:nth-child(1) { left: 8%; animation-delay: 0s; }
+        .floating-icons span:nth-child(2) { left: 22%; animation-delay: 4s; }
+        .floating-icons span:nth-child(3) { left: 38%; animation-delay: 8s; }
+        .floating-icons span:nth-child(4) { left: 58%; animation-delay: 2s; }
+        .floating-icons span:nth-child(5) { left: 74%; animation-delay: 6s; }
+        .floating-icons span:nth-child(6) { left: 90%; animation-delay: 10s; }
+
+        @keyframes float {
+            from { top: 100%; transform: rotate(0deg); }
+            to { top: -15%; transform: rotate(360deg); }
+        }
+
+        /* Watermark Logo */
+        .watermark {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            font-size: 22px;
+            color: rgba(255, 255, 255, 0.35);
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        /* Login Card */
+        .login-box {
+            background: #ffffff;
+            width: 380px;
+            padding: 45px;
+            border-radius: 16px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+            z-index: 2;
+        }
+
+        .login-box h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #2c3e50;
+        }
+
+        /* Floating Input */
+        .field {
+            position: relative;
+            margin-bottom: 25px;
+        }
+
+        .field input {
+            width: 100%;
+            padding: 14px 12px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 15px;
+            outline: none;
+        }
+
+        .field label {
+            position: absolute;
+            top: 50%;
+            left: 12px;
+            color: #777;
+            font-size: 14px;
+            transform: translateY(-50%);
+            pointer-events: none;
+            transition: 0.3s;
+            background: white;
+            padding: 0 6px;
+        }
+
+        .field input:focus + label,
+        .field input:not(:placeholder-shown) + label {
+            top: -8px;
+            font-size: 12px;
+            color: #2c5364;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: #2c5364;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-login:hover {
+            background: #203a43;
+        }
+
+        .message {
+            text-align: center;
+            font-size: 14px;
+            margin-bottom: 14px;
+        }
+
+        .message.error {
+            color: #e74c3c;
+        }
+
+        .message.success {
+            color: #27ae60;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Watermark -->
+
+
+<!-- Floating Educational Icons -->
+<div class="floating-icons">
+    <span>🎓</span>
+    <span>📘</span>
+    <span>✏️</span>
+    <span>🧮</span>
+    <span>💡</span>
+    <span>📚</span>
+</div>
+
+<!-- Login Box -->
 <div class="login-box">
     <h2>Login</h2>
+
     {% if messages %}
         {% for message in messages %}
-            <div class="error" style="color:green;">
+            <div class="message {{ message.tags }}">
                 {{ message }}
             </div>
         {% endfor %}
     {% endif %}
 
-
     <form method="POST">
         {% csrf_token %}
 
-        <div class="input-group">
+        <div class="field">
+            <input type="text" name="username" required placeholder=" ">
             <label>Username</label>
-            <input type="text" name="username" required>
         </div>
 
-        <div class="input-group">
+        <div class="field">
+            <input type="password" name="password" required placeholder=" ">
             <label>Password</label>
-            <input type="password" name="password" required>
         </div>
 
-        <button class="btn-login" type="submit">Sign In</button>
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-success">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-
+        <button type="submit" class="btn-login">Sign In</button>
     </form>
 </div>
 
 </body>
 </html>
-
-<!--<!DOCTYPE html>-->
-<!--{% load static %}-->
-<!--<html lang="en">-->
-<!--<head>-->
-<!--    <meta charset="UTF-8">-->
-<!--    <title>Django Login</title>-->
-
-<!--    &lt;!&ndash; Bootstrap 5 CSS &ndash;&gt;-->
-<!--    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">-->
-<!--</head>-->
-
-<!--<body class="bg-light">-->
-<!--<div class="text-center mb-3">-->
-<!--    <img src="{% static 'images/logo.png' %}" width="90" alt="Logo">-->
-<!--</div>-->
-
-
-<!--<div class="container">-->
-<!--    <div class="row justify-content-center align-items-center vh-100">-->
-<!--        <div class="col-md-4">-->
-
-<!--            <div class="card shadow-lg border-0 rounded-4">-->
-<!--                <div class="card-body p-4">-->
-
-<!--                    <h3 class="text-center mb-4">Login</h3>-->
-
-<!--                    <form method="POST">-->
-<!--                        {% csrf_token %}-->
-
-<!--                        &lt;!&ndash; User ID &ndash;&gt;-->
-<!--                        <div class="mb-3">-->
-<!--                            <label class="form-label">User ID</label>-->
-<!--                            <input type="text" name="userid" class="form-control" placeholder="Enter User ID" required>-->
-<!--                        </div>-->
-
-<!--                        &lt;!&ndash; Password &ndash;&gt;-->
-<!--                        <div class="mb-2">-->
-<!--                            <label class="form-label">Password</label>-->
-<!--                            <input type="password" name="password" id="password" class="form-control" required>-->
-<!--                        </div>-->
-
-<!--                        &lt;!&ndash; Show password &ndash;&gt;-->
-<!--                        <div class="form-check mb-3">-->
-<!--                            <input class="form-check-input" type="checkbox" onclick="togglePassword()">-->
-<!--                            <label class="form-check-label">-->
-<!--                                Show Password-->
-<!--                            </label>-->
-<!--                        </div>-->
-
-<!--                        <script>-->
-<!--                        function togglePassword() {-->
-<!--                            const pwd = document.getElementById("password");-->
-<!--                            pwd.type = pwd.type === "password" ? "text" : "password";-->
-<!--                        }-->
-<!--                        </script>-->
-<!--                        {% for message in messages %}-->
-<!--                            <div class="alert-->
-<!--                                {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %}">-->
-<!--                                {{ message }}-->
-<!--                            </div>-->
-<!--                        {% endfor %}-->
-
-
-<!--                        &lt;!&ndash; Submit &ndash;&gt;-->
-<!--                        <div class="d-grid">-->
-<!--                            <button type="submit" class="btn btn-primary btn-lg">-->
-<!--                                Login-->
-<!--                            </button>-->
-<!--                        </div>-->
-<!--                    </form>-->
-
-<!--                </div>-->
-<!--            </div>-->
-
-<!--        </div>-->
-<!--    </div>-->
-<!--</div>-->
-
-<!--&lt;!&ndash; Bootstrap JS &ndash;&gt;-->
-<!--<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>-->
-
-<!--</body>-->
-<!--</html>-->
