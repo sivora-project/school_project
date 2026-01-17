@@ -5,19 +5,23 @@
 
 <form method="get" class="card p-3 mb-4">
     <div class="row align-items-center">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <label>
                 <input type="radio" name="view_type" value="individual" checked>
                 Individual Student
             </label>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
             <input type="text" name="student_id" class="form-control" placeholder="Student PEN">
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
             <input type="text" name="student_name" class="form-control" placeholder="Student Name">
         </div>
         <div class="col-md-2">
+            <!-- ✅ Month selector -->
+            <input type="month" name="month" class="form-control">
+        </div>
+        <div class="col-md-3">
             <button class="btn btn-primary w-100">Search</button>
         </div>
     </div>
@@ -33,13 +37,22 @@
     <!-- 70% DETAILS -->
     <div class="col-md-8">
 
+        <!-- Student Basic Info -->
         <div class="card mb-3">
             <div class="card-body">
                 <h4>{{ student.name }}</h4>
-                <p class="text-muted">Student PEN: {{ student.student_pen }}</p>
+                <div class="row">
+                    <div class="col-md-6"><b>PEN / Roll:</b> {{ student.student_pen }}</div>
+                    <div class="col-md-6"><b>Father Name:</b> {{ student.father_name }}</div>
+                </div>
             </div>
         </div>
 
+        {% if selected_month %}
+        <p class="text-muted">Attendance for month: {{ selected_month }}</p>
+        {% endif %}
+
+        <!-- Attendance Summary -->
         <div class="row text-center mb-3">
             <div class="col"><div class="card p-3">Working Days<br><b>{{ total_working_days }}</b></div></div>
             <div class="col"><div class="card p-3 text-success">Present<br><b>{{ present_days }}</b></div></div>
@@ -47,14 +60,24 @@
             <div class="col"><div class="card p-3">Streak<br><b>{{ longest_streak }}</b></div></div>
         </div>
 
+        <!-- Marks -->
         <div class="card p-3">
             <h5>📘 Subject-wise Marks</h5>
             <table class="table table-bordered">
-                <tr><th>Subject</th><th>Marks</th></tr>
+                <tr>
+                    <th>Exam Type</th>
+                    <th>Subject</th>
+                    <th>Marks</th>
+                </tr>
                 {% for m in subject_marks %}
                 <tr>
+                    <td>{{ m.exam_type }}</td>
                     <td>{{ m.subject }}</td>
-                    <td>{{ m.marks }}</td>
+                    <td>{{ m.marks }} </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3">No marks available</td>
                 </tr>
                 {% endfor %}
             </table>
@@ -95,7 +118,8 @@ new Chart(document.getElementById('marksChart'), {
     data: {
         labels: [{% for m in subject_marks %}'{{ m.subject }}',{% endfor %}],
         datasets: [{
-            data: [{% for m in subject_marks %}{{ m.scored_marks }},{% endfor %}],
+            label: 'Marks',
+            data: [{% for m in subject_marks %}{{ m.marks }},{% endfor %}],
             backgroundColor: '#2196F3'
         }]
     }

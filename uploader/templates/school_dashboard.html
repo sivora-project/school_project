@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% block content %}
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#f4f7fb; --card:#fff; --primary:#2563eb;
+  --success:#16a34a; --warning:#f59e0b; --danger:#dc2626;
+  --text:#0f172a; --muted:#64748b; --border:#e5e7eb;
+}
+*{font-family:Inter,sans-serif;}
+body{background:var(--bg);}
+.wrapper{max-width:1450px;margin:auto;padding:28px;}
+
+.card{
+  background:var(--card); border-radius:14px; padding:22px;
+  margin-bottom:24px; box-shadow:0 12px 32px rgba(15,23,42,.08);
+}
+
+.header{display:flex;justify-content:space-between;align-items:center;}
+.header h1{font-size:28px;font-weight:700;color:var(--text);}
+.header span{color:var(--muted);}
+
+.filter-bar{
+  display:flex; gap:14px; align-items:center; flex-wrap:wrap;
+}
+.filter-bar select, .filter-bar input, .filter-bar button{
+  padding:10px 14px; border-radius:10px; border:1px solid var(--border);
+}
+.filter-bar button{
+  background:var(--primary); color:#fff; font-weight:600; border:none;
+}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;}
+.kpi{
+  background:linear-gradient(145deg,#fff,#f8fafc);
+  padding:20px;border-radius:14px;border:1px solid #eef2ff;
+}
+.kpi h4{margin:0;font-size:13px;color:var(--muted);}
+.kpi p{margin-top:6px;font-size:30px;font-weight:700;}
+.kpi.total p{color:var(--primary);}
+.kpi.present p{color:var(--success);}
+.kpi.absent p{color:var(--danger);}
+.kpi.percent p{color:var(--warning);}
+
+table{width:100%;border-collapse:collapse;}
+th{background:#f1f5f9;padding:14px;font-size:13px;color:var(--muted);}
+td{padding:14px;border-bottom:1px solid var(--border);text-align:center;}
+a{color:var(--primary);font-weight:600;text-decoration:none;}
+
+.grid-2{display:grid;grid-template-columns:2fr 1fr;gap:22px;}
+@media(max-width:1200px){.grid-2{grid-template-columns:1fr;}}
+</style>
+
+<div class="wrapper">
+
+<!-- HEADER -->
+<div class="header card">
+  <div>
+    <h1>🏫 School Attendance Dashboard</h1>
+    <span>{{ snapshot_label }}</span>
+  </div>
+</div>
+
+<!-- SNAPSHOT FILTERS (TOP) -->
+<div class="card">
+<form method="get" class="filter-bar">
+  <b>Snapshot:</b>
+
+  <select name="snapshot_mode">
+    <option value="month" {% if snapshot_mode == 'month' %}selected{% endif %}>Month-wise</option>
+    <option value="day" {% if snapshot_mode == 'day' %}selected{% endif %}>Day-wise</option>
+  </select>
+
+  <select name="snapshot_month">
+    {% for m,v in months %}
+      <option value="{{ m }}" {% if snapshot_month == m %}selected{% endif %}>{{ v }}</option>
+    {% endfor %}
+  </select>
+
+  <input type="date" name="snapshot_date" value="{{ snapshot_date }}">
+
+  <button type="submit">Apply</button>
+</form>
+</div>
+
+<!-- KPIs -->
+<div class="card">
+<div class="kpis">
+  <div class="kpi total"><h4>Total Students</h4><p>{{ total_students }}</p></div>
+  <div class="kpi present"><h4>Present</h4><p>{{ total_present }}</p></div>
+  <div class="kpi absent"><h4>Absent</h4><p>{{ total_absent }}</p></div>
+  <div class="kpi percent"><h4>Attendance %</h4><p>{{ attendance_percentage }}%</p></div>
+</div>
+</div>
+
+<!-- PIE + CLASS TABLE -->
+<div class="card grid-2">
+
+<!-- CLASS TABLE -->
+<div>
+<h3>📊 Class-wise Attendance</h3>
+<table>
+<tr><th>Class</th><th>Total</th><th>Present</th><th>Absent</th><th>%</th><th>Drill</th></tr>
+{% for cls,data in class_totals.items %}
+<tr>
+  <td><strong>{{ cls }}</strong></td>
+  <td>{{ data.total }}</td>
+  <td style="color:var(--success)">{{ data.present }}</td>
+  <td style="color:var(--danger)">{{ data.absent }}</td>
+  <td><strong>{{ data.percent }}%</strong></td>
+  <td>
+    <a href="{% url 'class_drill_dashboard' %}?class={{ cls|urlencode }}&month={{ snapshot_month }}">
+      View →
+    </a>
+  </td>
+</tr>
+{% endfor %}
+</table>
+</div>
+
+<!-- PIE -->
+<div>
+<h3>🧩 Present vs Absent</h3>
+<canvas id="pieChart" style="height:260px;"></canvas>
+</div>
+
+</div>
+
+<!-- REGULAR ABSENTEES -->
+<div class="card grid-2">
+
+<!-- TABLE -->
+<div>
+<h3>🚨 Regular Absentees</h3>
+<table>
+<tr><th>Class</th><th>Sec</th><th>>2</th><th>>3</th><th>>4</th><th>>5</th></tr>
+{% for r in continuous_absent_rows %}
+<tr>
+  <td>{{ r.class_name }}</td>
+  <td>{{ r.section }}</td>
+  <td>{{ r.gt2 }}</td>
+  <td>{{ r.gt3 }}</td>
+  <td>{{ r.gt4 }}</td>
+  <td style="color:var(--danger)"><strong>{{ r.gt5 }}</strong></td>
+</tr>
+{% endfor %}
+</table>
+</div>
+
+<!-- HORIZONTAL BAR -->
+<div>
+<h3>Overall Risk Distribution</h3>
+<canvas id="absentBarChart" style="height:260px;"></canvas>
+</div>
+
+</div>
+
+<!-- TREND (SEPARATE) -->
+<div class="card">
+<form method="get" class="filter-bar" style="margin-bottom:12px;">
+  <b>Trend:</b>
+  <select name="trend_mode">
+    <option value="month" {% if trend_mode == 'month' %}selected{% endif %}>Month-wise</option>
+    <option value="day" {% if trend_mode == 'day' %}selected{% endif %}>Day-wise</option>
+  </select>
+
+  <select name="trend_month">
+    {% for m,v in months %}
+      <option value="{{ m }}" {% if trend_month == m %}selected{% endif %}>{{ v }}</option>
+    {% endfor %}
+  </select>
+
+  <button type="submit">Apply</button>
+</form>
+
+<h3>📈 Attendance Trend</h3>
+<canvas id="trendChart" style="height:360px;"></canvas>
+</div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Pie
+new Chart(document.getElementById('pieChart'),{
+  type:'doughnut',
+  data:{
+    labels:['Present','Absent'],
+    datasets:[{
+      data:[{{ total_present }},{{ total_absent }}],
+      backgroundColor:['#16a34a','#dc2626']
+    }]
+  },
+  options:{cutout:'65%'}
+});
+
+// Absentee bar
+new Chart(document.getElementById('absentBarChart'),{
+  type:'bar',
+  data:{
+    labels: {{ absent_bar_labels|safe }},
+    datasets:[{
+      data: {{ absent_bar_values|safe }},
+      backgroundColor:['#16a34a','#f59e0b','#fb923c','#dc2626']
+    }]
+  },
+  options:{indexAxis:'y',plugins:{legend:{display:false}}}
+});
+
+// Trend
+new Chart(document.getElementById('trendChart'),{
+  type:'line',
+  data:{
+    labels: {{ trend_labels|safe }},
+    datasets:[{
+      data: {{ trend_data|safe }},
+      borderColor:'#2563eb',
+      backgroundColor:'rgba(37,99,235,0.18)',
+      fill:true,
+      tension:0.4
+    }]
+  }
+});
+</script>
+
+{% endblock %}

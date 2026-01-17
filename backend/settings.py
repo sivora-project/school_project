@@ -136,3 +136,6 @@ LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/login/'
 TEMPLATES[0]['DIRS'] = [BASE_DIR / 'templates']
+MIGRATION_MODULES = {
+    'uploader': None,
+}

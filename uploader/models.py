@@ -69,6 +69,13 @@ class AcademicCalendar(models.Model):
         blank=True,
         db_column='reason'
     )
+    academic_year = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        db_column='academic_year'
+    )
+
 
     class Meta:
         managed = False
@@ -140,15 +147,23 @@ class Student(models.Model):
     primary_key=True,
     db_column='student_pen')
 
+    student_class = models.TextField(
+        db_column='classes'
+    )
     # id = models.BigIntegerField(
     #     db_column='student_pen'
     # )
-
-    class_name = models.TextField(
-        db_column='classes',
-        null=True,
-        blank=True
-    )
+    # student_class = models.ForeignKey(
+    #     Classes,
+    #     on_delete=models.CASCADE,
+    #     db_column='classes',
+    #     related_name='students'
+    # )
+    # class_name = models.TextField(
+    #     db_column='classes',
+    #     null=True,
+    #     blank=True
+    # )
 
     section = models.TextField(
         db_column='sections',
@@ -164,6 +179,11 @@ class Student(models.Model):
 
     gender = models.TextField(
         db_column='gender1',
+        null=True,
+        blank=True
+    )
+    father_name= models.TextField(
+        db_column='father_name',
         null=True,
         blank=True
     )
