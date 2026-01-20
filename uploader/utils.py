@@ -50,23 +50,43 @@ def get_longest_attendance_streak(student_id):
 
     return longest
 
+from django.db.models import Sum
+from .models import StudentMarks, Subject, ExamMaster
 
-def get_student_marks_summary(student_id):
+
+def get_student_marks_summary(student_id, exam_code=None):
     qs = StudentMarks.objects.filter(student_id=student_id)
 
-    summary = qs.aggregate(
-        total_marks=Sum('max_marks'),
-        obtained_marks=Sum('marks')
-    )
+    if exam_code:
+        qs = qs.filter(exam_code=exam_code)
 
-    subject_wise = qs.values(
-        'exam_type',
-        'subject',
-        'marks',
-        'max_marks'
-    )
+    summary = {
+        'total_marks': qs.count() * 100,
+        'obtained_marks': qs.aggregate(
+            total=Sum('marks_obtained')
+        )['total'] or 0
+    }
 
-    return summary, list(subject_wise)
+    subject_map = {
+        s.subject_code: s.subject_name
+        for s in Subject.objects.all()
+    }
+
+    exam_map = {
+        e.exam_code: e.exam_name
+        for e in ExamMaster.objects.all()
+    }
+
+    subject_wise = []
+    for m in qs:
+        subject_wise.append({
+            'exam_type': exam_map.get(m.exam_code, m.exam_code),
+            'subject': subject_map.get(m.subject_code, m.subject_code),
+            'marks': 'AB' if m.is_absent else m.marks_obtained,
+            'max_marks': 100
+        })
+
+    return summary, subject_wise
 
 
 # =========================
@@ -133,19 +153,6 @@ from collections import defaultdict
 
 
 def get_continuous_absent_summary(attendance_qs, students_qs):
-    """
-    Calculates continuous absenteeism per class & section.
-
-    Returns:
-    {
-      (class_name, section): {
-          'gt2': int,
-          'gt3': int,
-          'gt4': int,
-          'gt5': int
-      }
-    }
-    """
 
     # Map attendance by student (latest first)
     attendance_map = defaultdict(list)
@@ -178,3 +185,21 @@ def get_continuous_absent_summary(attendance_qs, students_qs):
             summary[key]['gt5'] += 1
 
     return summary
+
+# =========================
+# FEE MODULE UTILITIES
+# =========================
+
+def update_fee_status(student_fee):
+    student_fee.due_amount = student_fee.total_amount - student_fee.paid_amount
+
+    if student_fee.due_amount <= 0:
+        student_fee.status = 'PAID'
+        student_fee.due_amount = 0
+    elif student_fee.paid_amount > 0:
+        student_fee.status = 'PARTIAL'
+    else:
+        student_fee.status = 'DUE'
+
+    student_fee.save()
+

@@ -8,6 +8,35 @@ from .utils import (
     get_longest_attendance_streak,
     get_student_marks_summary
 )
+from datetime import date, datetime
+from django.shortcuts import render
+from django.db.models import Count, Q
+
+from .models import Student, Attendance, Classes
+from .utils import get_continuous_absent_summary
+
+from .models import Student, Attendance, AcademicCalendar
+from .utils import (
+    get_regular_absent_students,
+    get_monthly_attendance_trend
+)
+
+from decimal import Decimal
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.db.models import Count, Q
+import openpyxl
+from django.http import HttpResponse
+
+from .models import Student, Attendance, AcademicCalendar, Classes
+from .utils import update_fee_status
+from django.db.models import Sum
+from django.shortcuts import render, redirect
+from django.db import transaction
+from datetime import date
+import time
+
+from .models import Student, StudentFee, FeePayment
 
 
 def user_login(request):
@@ -52,21 +81,48 @@ def dashboard(request):
 # def dashboard(request):
 #     return render(request, 'dashboard.html')
 
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
+from django.shortcuts import render
+
+from .models import Student
+from .utils import (
+    get_student_attendance_summary,
+    get_longest_attendance_streak,
+    get_student_marks_summary
+)
+
+
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
+from django.shortcuts import render
+
+from .models import Student
+from .utils import (
+    get_student_attendance_summary,
+    get_longest_attendance_streak,
+    get_student_marks_summary
+)
+
+
 @login_required
 def student_info(request):
     view_type = request.GET.get('view_type')
     context = {}
 
     if view_type == 'individual':
-        student_id = request.GET.get('student_id')
+        student_pen_input = request.GET.get('student_id')
         student_name = request.GET.get('student_name')
-        month = request.GET.get('month')  # YYYY-MM
+        month = request.GET.get('month')
 
-        if student_id or student_name:
+        # ✅ NEW: exam filter (default FA1)
+        exam_code = request.GET.get('exam_code', 'FA1')
+
+        if student_pen_input or student_name:
             qs = Student.objects.all()
 
-            if student_id:
-                qs = qs.filter(student_pen=student_id)
+            if student_pen_input:
+                qs = qs.filter(student_pen__iexact=student_pen_input)
 
             if student_name:
                 qs = qs.filter(name__icontains=student_name)
@@ -74,16 +130,16 @@ def student_info(request):
             student = qs.first()
 
             if student:
-                # ✅ month-wise attendance
+                # ---------- ATTENDANCE ----------
                 total_days, present_days, absent_days = get_student_attendance_summary(
                     student.student_pen, month
                 )
-
                 longest_streak = get_longest_attendance_streak(student.student_pen)
 
-                # ✅ marks with exam type
+                # ---------- MARKS (FILTERED BY EXAM) ----------
                 marks_summary, subject_marks = get_student_marks_summary(
-                    student.student_pen
+                    student.student_id,
+                    exam_code=exam_code
                 )
 
                 context.update({
@@ -95,19 +151,19 @@ def student_info(request):
                     'present_days': present_days,
                     'absent_days': absent_days,
                     'longest_streak': longest_streak,
-                    'attendance_present': present_days,
-                    'attendance_absent': absent_days,
                     'selected_month': month,
 
                     # marks
                     'total_marks': marks_summary['total_marks'],
                     'marks_obtained': marks_summary['obtained_marks'],
                     'subject_marks': subject_marks,
+                    'selected_exam': exam_code,   # ✅ pass to UI
                 })
             else:
                 context['no_data'] = True
 
     return render(request, 'student_info.html', context)
+
 
 @login_required
 def fee_payment(request):
@@ -121,30 +177,6 @@ def update_student(request):
 def data_analysis(request):
     return render(request, 'data_analysis.html')
 
-
-
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from datetime import date
-
-from .models import Student, Attendance, AcademicCalendar
-from .utils import (
-    get_regular_absent_students,
-    get_monthly_attendance_trend
-)
-
-
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from datetime import date, timedelta
-from django.db.models import Count, Q
-import openpyxl
-from django.http import HttpResponse
-
-from .models import Student, Attendance, AcademicCalendar, Classes
-from .utils import get_regular_absent_students
 
 
 
@@ -251,12 +283,7 @@ def class_drill_dashboard(request):
 
 
 
-from datetime import date, datetime
-from django.shortcuts import render
-from django.db.models import Count, Q
 
-from .models import Student, Attendance, Classes
-from .utils import get_continuous_absent_summary
 
 MONTHS = [
     (1, "Jan"), (2, "Feb"), (3, "Mar"), (4, "Apr"),
@@ -401,4 +428,276 @@ def school_dashboard(request):
         'trend_month': trend_month,
         'trend_labels': trend_labels,
         'trend_data': trend_data,
+    })
+# =====================================================
+# FEE DASHBOARD
+# =====================================================
+@login_required
+def fee_dashboard(request):
+
+    academic_year = request.GET.get('academic_year')
+    status = request.GET.get('status')
+
+    fees = StudentFee.objects.select_related('fee_head')
+
+    if academic_year:
+        fees = fees.filter(academic_year=academic_year)
+
+    if status:
+        if status == 'DUE':
+            fees = fees.filter(due_amount__gt=0)
+        elif status == 'PAID':
+            fees = fees.filter(due_amount=0)
+
+    summary = fees.aggregate(
+        total_fee=Sum('total_amount'),
+        total_paid=Sum('paid_amount'),
+        total_due=Sum('due_amount')
+    )
+
+    return render(request, 'fee_dashboard.html', {
+        'fees': fees,
+        'summary': summary
+    })
+
+# =====================================================
+# CREATE FEE RECEIPT
+# =====================================================
+@login_required
+def create_fee_receipt(request, fee_id):
+
+    fee = StudentFee.objects.get(id=fee_id)
+
+    if request.method == 'POST':
+        amount = float(request.POST.get('amount'))
+
+        FeePayment.objects.create(
+            student_fee=fee,
+            payment_date=date.today(),
+            amount=amount,
+            payment_mode=request.POST.get('payment_mode'),
+            receipt_no=request.POST.get('receipt_no')
+        )
+
+        fee.paid_amount += amount
+        update_fee_status(fee)
+
+        messages.success(request, "Fee payment recorded successfully")
+        return redirect('fee_dashboard')
+
+    return render(request, 'fees/create_receipt.html', {
+        'fee': fee
+    })
+def generate_receipt_no():
+    """
+    Format: RCPT-2025-000001
+    """
+    year = date.today().year
+
+    last_payment = FeePayment.objects.order_by("-id").first()
+    next_no = (last_payment.id + 1) if last_payment else 1
+
+    return f"RCPT-{year}-{str(next_no).zfill(6)}"
+
+
+
+def staff_fee_dashboard(request):
+    student = None
+    fee_rows = []
+
+    if request.method == "POST":
+        pen = request.POST.get("student_pen")
+
+        student = Student.objects.filter(
+            student_pen=pen
+        ).first()
+
+        if not student:
+            return render(request, "fees/staff_fee_dashboard.html", {
+                "error": "Invalid Student PEN"
+            })
+
+        fee_rows = (
+            StudentFee.objects
+            .filter(student_id=student.student_id)
+            .select_related("fee_head")
+            .order_by("term_no")
+        )
+
+    return render(request, "staff_fee_dashboard.html", {
+        "student": student,
+        "fee_rows": fee_rows
+    })
+
+
+def pay_fee(request, student_fee_id):
+    student_fee = StudentFee.objects.filter(id=student_fee_id).first()
+    if not student_fee:
+        return HttpResponse("Fee record not found", status=404)
+
+    student = Student.objects.filter(
+        student_id=student_fee.student_id
+    ).first()
+
+    if not student:
+        return HttpResponse("Student not found", status=404)
+
+    if request.method == "POST":
+        amount = float(request.POST.get("amount"))
+        mode = request.POST.get("payment_mode")
+        utr = request.POST.get("utr")
+
+        if amount > student_fee.due_amount:
+            return render(request, "pay_fee.html", {
+                "error": "Amount exceeds balance",
+                "student_fee": student_fee,
+                "student": student
+            })
+
+        with transaction.atomic():
+            payment = FeePayment.objects.create(
+                student_fee=student_fee,
+                payment_date=date.today(),
+                amount=amount,
+                payment_mode=mode,
+                receipt_no=f"RCPT-{date.today().year}-{student_fee_id}"
+            )
+
+            student_fee.paid_amount += amount
+            student_fee.save()
+
+        return redirect("fee_receipt", payment.id)
+
+    return render(request, "pay_fee.html", {
+        "student_fee": student_fee,
+        "student": student
+    })
+
+
+def fee_receipt(request, payment_id):
+    payment = FeePayment.objects.filter(id=payment_id).first()
+    if not payment:
+        return HttpResponse("Payment not found", status=404)
+
+    student_fee = payment.student_fee
+    student = Student.objects.filter(student_id=student_fee.student_id).first()
+
+    return render(request, "fees/receipt.html", {
+        "payment": payment,
+        "student": student,
+        "student_fee": student_fee
+    })
+
+
+
+
+def staff_fee_dashboard(request):
+    student = None
+    fee_rows = []
+    selected_fee = None
+    error = None
+
+    # --------------------
+    # SEARCH BY PEN
+    # --------------------
+    if request.method == "POST" and "student_pen" in request.POST:
+        pen = request.POST.get("student_pen")
+
+        student = Student.objects.filter(student_pen=pen).first()
+        if not student:
+            return render(request, "staff_fee_dashboard.html", {
+                "error": "Invalid Student PEN"
+            })
+
+        fee_rows = StudentFee.objects.filter(
+            student_id=student.student_id
+        ).select_related("fee_head")
+
+    # --------------------
+    # PAY NOW CLICK
+    # --------------------
+    if request.method == "GET" and request.GET.get("pay"):
+        fee_id = request.GET.get("pay")
+
+        selected_fee = StudentFee.objects.filter(id=fee_id).first()
+        if selected_fee:
+            student = Student.objects.filter(
+                student_id=selected_fee.student_id
+            ).first()
+
+            fee_rows = StudentFee.objects.filter(
+                student_id=student.student_id
+            ).select_related("fee_head")
+
+    # --------------------
+    # PAYMENT SUBMIT
+    # --------------------
+
+
+    # --------------------
+    # PAYMENT SUBMIT
+    # --------------------
+    if request.method == "POST" and "amount" in request.POST:
+        fee_id = request.POST.get("student_fee_id")
+        amount = Decimal(request.POST.get("amount"))
+        mode = request.POST.get("payment_mode")
+        utr = request.POST.get("utr_number")
+
+        selected_fee = StudentFee.objects.filter(id=fee_id).first()
+        student = Student.objects.filter(
+            student_id=selected_fee.student_id
+        ).first()
+
+        if amount > selected_fee.due_amount:
+            error = "Amount exceeds balance"
+
+        else:
+            with transaction.atomic():
+                receipt_no = generate_receipt_no()
+
+                payment = FeePayment.objects.create(
+                    student_fee=selected_fee,
+                    payment_date=date.today(),
+                    amount=amount,
+                    payment_mode=mode,
+                    receipt_no=receipt_no,
+                    utr_number=utr if mode == "Non-Cash" else None
+                )
+
+                from django.db.models import F
+
+                StudentFee.objects.filter(
+                    id=selected_fee.id
+                ).update(
+                    paid_amount=F("paid_amount") + amount
+                )
+
+                # selected_fee.paid_amount += amount
+                # selected_fee.save()
+
+
+            return redirect("fee_receipt", payment_id=payment.id)
+
+    return render(request, "staff_fee_dashboard.html", {
+        "student": student,
+        "fee_rows": fee_rows,
+        "selected_fee": selected_fee,
+        "error": error
+    })
+
+
+# --------------------
+# RECEIPT PREVIEW
+# --------------------
+def fee_receipt(request, payment_id):
+    payment = FeePayment.objects.filter(id=payment_id).first()
+    student_fee = payment.student_fee
+    student = Student.objects.filter(
+        student_id=student_fee.student_id
+    ).first()
+
+    return render(request, "fee_receipt.html", {
+        "payment": payment,
+        "student": student,
+        "student_fee": student_fee
     })

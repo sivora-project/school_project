@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container-fluid mt-3">
+
+    <!-- ================= FILTERS ================= -->
+    <form method="get" class="row g-2 mb-4">
+        <div class="col-md-3">
+            <input type="text"
+                   name="academic_year"
+                   value="{{ request.GET.academic_year }}"
+                   class="form-control"
+                   placeholder="Academic Year (2024-2025)">
+        </div>
+
+        <div class="col-md-3">
+            <select name="status" class="form-control">
+                <option value="">All Status</option>
+                <option value="PAID" {% if request.GET.status == "PAID" %}selected{% endif %}>Paid</option>
+                <option value="DUE" {% if request.GET.status == "DUE" %}selected{% endif %}>Due</option>
+            </select>
+        </div>
+
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100">Apply</button>
+        </div>
+    </form>
+
+    <!-- ================= KPI CARDS ================= -->
+    <div class="row mb-4 text-center">
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h6>Total Fee</h6>
+                    <h4>₹ {{ summary.total_fee|default:0 }}</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body text-success">
+                    <h6>Collected</h6>
+                    <h4>₹ {{ summary.total_paid|default:0 }}</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-body text-danger">
+                    <h6>Due</h6>
+                    <h4>₹ {{ summary.total_due|default:0 }}</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= FEE TABLE ================= -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white">
+            Student Fee Details
+        </div>
+
+        <div class="card-body table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Student</th>
+                        <th>Class</th>
+                        <th>Fee Head</th>
+                        <th>Total</th>
+                        <th>Paid</th>
+                        <th>Due</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for fee in fees %}
+                    <tr>
+                        <td>{{ fee.student.name }}</td>
+                        <td>{{ fee.student.student_class }} {{ fee.student.section }}</td>
+                        <td>{{ fee.fee_head.fee_name }}</td>
+                        <td>₹ {{ fee.total_amount }}</td>
+                        <td class="text-success">₹ {{ fee.paid_amount }}</td>
+                        <td class="text-danger">₹ {{ fee.due_amount }}</td>
+                        <td>
+                            {% if fee.due_amount > 0 %}
+                                <a href="{% url 'create_fee_receipt' fee.id %}"
+                                   class="btn btn-sm btn-success">
+                                    Create Receipt
+                                </a>
+                            {% else %}
+                                <span class="badge bg-success">Paid</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">
+                            No fee records found
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

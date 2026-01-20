@@ -16,7 +16,14 @@ urlpatterns = [
     path('dashboard/school/',views.school_dashboard,name='school_dashboard'),
     path('dashboard/school/class/',views.class_drill_dashboard,name='class_drill_dashboard'),
     path('dashboard/school/export/',views.export_school_dashboard_excel,name='export_school_dashboard_excel'),
+    path("staff/", views.staff_fee_dashboard, name="fee_dashboard"),
+    path("pay/<int:student_fee_id>/", views.pay_fee, name="pay_fee"),
+    path("receipt/<int:payment_id>/", views.fee_receipt, name="fee_receipt"),
+
 ]
+#
+# path('fees/', views.fee_dashboard, name='fee_dashboard'),
+# path('fees/receipt/<int:fee_id>/', views.create_fee_receipt, name='create_fee_receipt'),
 
 # from django.urls import path
 # from .views import user_login, user_logout, dashboard

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Fee Receipt{% endblock %}
+{% block content %}
+
+<div class="card p-4" id="receipt">
+    <h4 class="text-center mb-3">Fee Receipt</h4>
+
+    <p><b>Receipt No:</b> {{ payment.receipt_no }}</p>
+    <p><b>Date:</b> {{ payment.payment_date }}</p>
+
+    <hr>
+
+    <p><b>Student Name:</b> {{ student.name }}</p>
+    <p><b>Father Name:</b> {{ student.father_name }}</p>
+    <p><b>Class:</b> {{ student.student_class }} - {{ student.section }}</p>
+
+    <hr>
+
+    <p><b>Fee Type:</b> {{ student_fee.fee_head.fee_name }}</p>
+    <p><b>Paid Amount:</b> ₹{{ payment.amount }}</p>
+    <p><b>Remaining Balance:</b> ₹{{ student_fee.due_amount }}</p>
+
+    <p><b>Payment Mode:</b> {{ payment.payment_mode }}</p>
+
+    {% if payment.utr_number %}
+        <p><b>UTR Number:</b> {{ payment.utr_number }}</p>
+    {% endif %}
+
+    <div class="text-center mt-4">
+        <button onclick="window.print()" class="btn btn-primary">
+            Print / Save as PDF
+        </button>
+        <a href="{% url 'fee_dashboard' %}" class="btn btn-secondary">
+            Back
+        </a>
+    </div>
+</div>
+
+<style>
+@media print {
+    body * { visibility: hidden; }
+    #receipt, #receipt * { visibility: visible; }
+    #receipt { position: absolute; left: 0; top: 0; width: 100%; }
+}
+</style>
+
+{% endblock %}

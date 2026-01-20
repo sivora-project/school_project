@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            Create Fee Receipt
+        </div>
+
+        <div class="card-body">
+            <h6>Student Details</h6>
+            <p>
+                <strong>Name:</strong> {{ fee.student.name }} <br>
+                <strong>Class:</strong> {{ fee.student.student_class }} {{ fee.student.section }} <br>
+                <strong>Fee Head:</strong> {{ fee.fee_head.fee_name }}
+            </p>
+
+            <hr>
+
+            <p>
+                <strong>Total Fee:</strong> ₹ {{ fee.total_amount }} <br>
+                <strong>Paid:</strong> ₹ {{ fee.paid_amount }} <br>
+                <strong>Due:</strong>
+                <span class="text-danger">₹ {{ fee.due_amount }}</span>
+            </p>
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label>Paying Amount</label>
+                        <input type="number"
+                               name="amount"
+                               step="0.01"
+                               max="{{ fee.due_amount }}"
+                               required
+                               class="form-control">
+                    </div>
+
+                    <div class="col-md-4">
+                        <label>Payment Mode</label>
+                        <select name="payment_mode" class="form-control" required>
+                            <option value="">Select</option>
+                            <option value="Cash">Cash</option>
+                            <option value="UPI">UPI</option>
+                            <option value="Bank">Bank</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label>Receipt No</label>
+                        <input type="text"
+                               name="receipt_no"
+                               class="form-control"
+                               required>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <button class="btn btn-success">
+                        Submit Payment
+                    </button>
+                    <a href="{% url 'fee_dashboard' %}"
+                       class="btn btn-secondary">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
