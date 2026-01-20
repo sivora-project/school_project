@@ -701,3 +701,61 @@ def fee_receipt(request, payment_id):
         "student": student,
         "student_fee": student_fee
     })
+
+
+
+
+from django.db.models import Sum
+from datetime import date
+
+
+def daily_collection_report(request):
+    selected_date = request.GET.get("date")
+
+    if selected_date:
+        report_date = selected_date
+    else:
+        report_date = date.today()
+
+    payments = FeePayment.objects.filter(
+        payment_date=report_date
+    ).select_related("student_fee")
+
+    total_amount = payments.aggregate(
+        total=Sum("amount")
+    )["total"] or 0
+
+    cash_amount = payments.filter(
+        payment_mode="Cash"
+    ).aggregate(total=Sum("amount"))["total"] or 0
+
+    non_cash_amount = payments.filter(
+        payment_mode="Non-Cash"
+    ).aggregate(total=Sum("amount"))["total"] or 0
+
+    report_rows = []
+    for p in payments:
+        student = Student.objects.filter(
+            student_id=p.student_fee.student_id
+        ).first()
+
+        report_rows.append({
+            "receipt_no": p.receipt_no,
+            "student_name": student.name if student else "",
+            "fee_type": (
+                f"Term {p.student_fee.term_no} Fee"
+                if p.student_fee.fee_head.is_term_fee
+                else p.student_fee.fee_head.fee_name
+            ),
+            "amount": p.amount,
+            "payment_mode": p.payment_mode,
+            "utr": getattr(p, "utr_number", "")
+        })
+
+    return render(request, "daily_collection_report.html", {
+        "report_date": report_date,
+        "total_amount": total_amount,
+        "cash_amount": cash_amount,
+        "non_cash_amount": non_cash_amount,
+        "report_rows": report_rows
+    })

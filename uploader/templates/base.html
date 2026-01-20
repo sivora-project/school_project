@@ -94,7 +94,11 @@
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'data_analysis' %}">Data Analysis</a>
             </li>
-
+            <li>
+                <a class="nav-link" href="{% url 'daily_collection_report' %}">
+    Daily Collection Report
+</a>
+            </li>
             <!-- ADMIN -->
             {% if request.session.role == "ADMIN" %}
             <li class="nav-item">

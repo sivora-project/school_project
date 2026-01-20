@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Daily Collection Report{% endblock %}
+{% block content %}
+
+<h4 class="mb-3">Daily Collection Report</h4>
+
+<!-- FILTER -->
+<form method="get" class="card p-3 mb-3">
+    <label>Select Date</label>
+    <div class="d-flex gap-2">
+        <input type="date" name="date" class="form-control"
+               value="{{ report_date }}">
+        <button class="btn btn-primary">View</button>
+    </div>
+</form>
+
+<!-- SUMMARY -->
+<div class="row mb-3">
+    <div class="col-md-4">
+        <div class="card p-3 text-center">
+            <h6>Total Collection</h6>
+            <h4>₹{{ total_amount }}</h4>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-3 text-center">
+            <h6>Cash Collection</h6>
+            <h4>₹{{ cash_amount }}</h4>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card p-3 text-center">
+            <h6>Non-Cash Collection</h6>
+            <h4>₹{{ non_cash_amount }}</h4>
+        </div>
+    </div>
+</div>
+
+<!-- TABLE -->
+<div class="card p-3">
+    <table class="table table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>Receipt No</th>
+                <th>Student Name</th>
+                <th>Fee Type</th>
+                <th>Amount</th>
+                <th>Payment Mode</th>
+                <th>UTR</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for row in report_rows %}
+            <tr>
+                <td>{{ row.receipt_no }}</td>
+                <td>{{ row.student_name }}</td>
+                <td>{{ row.fee_type }}</td>
+                <td>{{ row.amount }}</td>
+                <td>{{ row.payment_mode }}</td>
+                <td>{{ row.utr }}</td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="6" class="text-center">
+                    No collection found for this date
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-3 text-end">
+    <button onclick="window.print()" class="btn btn-secondary">
+        Print / Save PDF
+    </button>
+</div>
+
+{% endblock %}
