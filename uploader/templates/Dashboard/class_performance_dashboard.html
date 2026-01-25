@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block title %}Class Performance Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+
+    <!-- HEADER -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-0">Class Performance Dashboard</h3>
+            <small class="text-muted">Exam-wise academic performance</small>
+        </div>
+
+        <select id="examSelect" class="form-select w-auto">
+            {% for e in exams %}
+                <option value="{{ e.exam_code }}">
+                    {{ e.exam_name }} (Term {{ e.term_no }})
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- KPI -->
+    <div class="row mb-4">
+        <div class="col-md-4"><div class="kpi-card">Total Classes<br><b id="kpiClasses">–</b></div></div>
+        <div class="col-md-4"><div class="kpi-card">Best Class<br><b id="kpiBest">–</b></div></div>
+        <div class="col-md-4"><div class="kpi-card">Pass %<br><b id="kpiPass">–</b></div></div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="ui-card">
+                <h6>Class Distribution</h6>
+                <canvas id="doughnutChart"></canvas>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="ui-card">
+                <h6>Class-wise Average Marks</h6>
+                <canvas id="barChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- CLASS TABLE -->
+    <div class="ui-card mb-4">
+        <h6>Class Performance</h6>
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Class</th>
+                    <th>Students</th>
+                    <th>Average</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+        <small class="text-muted">Click a class row to view subject & student details</small>
+    </div>
+
+    <!-- SUBJECT-WISE -->
+    <div class="ui-card mb-4">
+        <h6>Subject-wise Performance</h6>
+        <canvas id="subjectChart" style="min-height:300px"></canvas>
+    </div>
+
+    <!-- ✅ STUDENT-WISE MARKS (THIS WAS MISSING) -->
+    <div class="ui-card">
+        <h6>Student-wise Marks</h6>
+        <div class="table-responsive">
+            <table class="table table-bordered table-sm" id="studentMarksTable">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+const examSelect = document.getElementById("examSelect");
+const tableBody = document.getElementById("tableBody");
+
+let doughnutChart, barChart, subjectChart;
+
+/* ---------------- DASHBOARD ---------------- */
+function loadDashboard() {
+    fetch(`/dashboard/api/class-performance/?exam_code=${examSelect.value}`)
+        .then(r => r.json())
+        .then(d => {
+            document.getElementById("kpiClasses").innerText = d.kpi.total_classes;
+            document.getElementById("kpiBest").innerText = d.kpi.best_class;
+            document.getElementById("kpiPass").innerText = d.kpi.pass_percentage + "%";
+
+            if (doughnutChart) doughnutChart.destroy();
+            doughnutChart = new Chart(doughnutChartCanvas(), {
+                type: "doughnut",
+                data: { labels: d.doughnut.labels, datasets: [{ data: d.doughnut.data }] }
+            });
+
+            if (barChart) barChart.destroy();
+            barChart = new Chart(barChartCanvas(), {
+                type: "bar",
+                data: { labels: d.bar.labels, datasets: [{ data: d.bar.data }] }
+            });
+
+            tableBody.innerHTML = "";
+            d.table.forEach(r => {
+                tableBody.innerHTML += `
+                    <tr data-class-id="${r.class_id}">
+                        <td>${r.class}</td>
+                        <td>${r.students}</td>
+                        <td>${r.avg}</td>
+                    </tr>
+                `;
+            });
+        });
+}
+
+/* ---------------- SUBJECT ---------------- */
+function loadSubject(exam, classId) {
+    fetch(`/dashboard/api/subject-performance/?exam_code=${exam}&class_id=${classId}`)
+        .then(r => r.json())
+        .then(d => {
+            if (subjectChart) subjectChart.destroy();
+            subjectChart = new Chart(subjectChartCanvas(), {
+                type: "bar",
+                data: { labels: d.labels, datasets: [{ data: d.data }] }
+            });
+        });
+}
+
+/* ---------------- STUDENT-WISE ---------------- */
+function loadStudentMarks(exam, classId) {
+    fetch(`/dashboard/api/student-wise-marks/?exam_code=${exam}&class_id=${classId}`)
+        .then(r => r.json())
+        .then(d => {
+
+            const thead = document.querySelector("#studentMarksTable thead");
+            const tbody = document.querySelector("#studentMarksTable tbody");
+
+            // Header
+            let header = "<tr><th>Student</th>";
+            d.subjects.forEach(s => header += `<th>${s}</th>`);
+            header += "<th>Total</th></tr>";
+            thead.innerHTML = header;
+
+            // Student rows
+            tbody.innerHTML = "";
+            d.rows.forEach(r => {
+                let row = `<tr><td>${r.student}</td>`;
+                d.subjects.forEach(s => row += `<td>${r[s]}</td>`);
+                row += `<td><b>${r.total}</b></td></tr>`;
+                tbody.innerHTML += row;
+            });
+
+            // ✅ SUBJECT TOTAL ROW
+            let totalRow = `<tr class="table-dark"><td><b>Total</b></td>`;
+            d.subjects.forEach(s => {
+                totalRow += `<td><b>${d.subject_totals[s]}</b></td>`;
+            });
+            totalRow += `<td><b>${d.grand_total}</b></td></tr>`;
+            tbody.innerHTML += totalRow;
+        });
+}
+
+/* ---------------- EVENTS ---------------- */
+tableBody.addEventListener("click", e => {
+    const row = e.target.closest("tr");
+    if (!row) return;
+
+    const classId = row.dataset.classId;
+    const exam = examSelect.value;
+
+    loadSubject(exam, classId);
+    loadStudentMarks(exam, classId);
+});
+
+examSelect.addEventListener("change", loadDashboard);
+loadDashboard();
+
+function doughnutChartCanvas(){return document.getElementById("doughnutChart")}
+function barChartCanvas(){return document.getElementById("barChart")}
+function subjectChartCanvas(){return document.getElementById("subjectChart")}
+</script>
+{% endblock %}

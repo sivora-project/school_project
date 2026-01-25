@@ -1,5 +1,9 @@
 from django.db import models
 
+
+# =========================
+# USER / AUTH
+# =========================
 class UserCredential(models.Model):
     username = models.CharField(max_length=100, unique=True)
     password = models.CharField(max_length=255)
@@ -7,102 +11,51 @@ class UserCredential(models.Model):
     is_active = models.BooleanField(default=True)
 
     class Meta:
+        managed = False
         db_table = 'user_credentials'
 
     def __str__(self):
         return self.username
 
+
+# =========================
+# ACADEMIC CALENDAR
+# =========================
 class AcademicCalendar(models.Model):
     date = models.DateField(primary_key=True)
-
-    is_working_day = models.BooleanField(
-        unique=True,
-        db_column='is_working_day'
-    )
-
-    reason = models.CharField(
-        max_length=100,
-        null=True,
-        blank=True,
-        db_column='reason'
-    )
-    academic_year = models.CharField(
-        max_length=100,
-        null=True,
-        blank=True,
-        db_column='academic_year'
-    )
-
+    is_working_day = models.BooleanField(db_column='is_working_day')
+    reason = models.CharField(max_length=100, null=True, blank=True)
+    academic_year = models.CharField(max_length=100, null=True, blank=True)
 
     class Meta:
         managed = False
         db_table = 'academic_calender'
 
-class Attendance(models.Model):
-    id = models.AutoField(primary_key=True)
 
-    Student_pen = models.CharField(
-        max_length=100,
-        unique=True,
-        db_column='student_pen'
-    )
-
-    attendance_date = models.DateField(db_column='attendance_date')
-
-    status = models.CharField(
-        max_length=50,
-        null=True,
-        blank=True,
-        db_column='status'
-    )
-
-    marked_by = models.CharField(
-        max_length=50,
-        null=True,
-        blank=True,
-        db_column='marked_by'
-    )
-
-    created_at = models.DateTimeField(db_column='created_at')
-
-    class Meta:
-        managed = False
-        db_table = 'attendence'
-
+# =========================
+# CLASSES (MASTER)
+# =========================
 class Classes(models.Model):
     id = models.AutoField(primary_key=True)
-
-    class_name = models.CharField(
-        max_length=100,
-        unique=True,
-        db_column='class_name'
-    )
-
-    section = models.CharField(
-        max_length=10,
-        db_column='section'
-    )
-
-    academic_year = models.CharField(
-        max_length=50,
-        null=True,
-        blank=True,
-        db_column='academic_year'
-    )
-
-    is_active = models.BooleanField(db_column='is_active')
-
-    created_at = models.DateTimeField(db_column='created_at')
+    class_name = models.CharField(max_length=100, unique=True)
+    section = models.CharField(max_length=10)
+    academic_year = models.CharField(max_length=50, null=True, blank=True)
+    is_active = models.BooleanField()
+    created_at = models.DateTimeField()
 
     class Meta:
         managed = False
         db_table = 'classes1'
 
+    def __str__(self):
+        return self.class_name
+
+
+# =========================
+# STUDENT
+# =========================
 class Student(models.Model):
-    student_id = models.AutoField(
-        primary_key=True,
-        db_column='student_id'
-    )
+    student_id = models.AutoField(primary_key=True, db_column='student_id')
 
     student_pen = models.CharField(
         max_length=20,
@@ -110,7 +63,22 @@ class Student(models.Model):
         db_column='student_pen'
     )
 
-    student_class = models.TextField(db_column='classes')
+    # ✅ NEW FK (USE THIS GOING FORWARD)
+    class_ref = models.ForeignKey(
+        Classes,
+        on_delete=models.PROTECT,
+        db_column='class_id',
+        null=True,
+        blank=True
+    )
+
+    # ⚠️ OLD FIELD (KEEP TEMPORARILY – DO NOT DELETE YET)
+    student_class = models.TextField(
+        db_column='classes',
+        null=True,
+        blank=True
+    )
+
     section = models.TextField(db_column='sections', null=True, blank=True)
     name = models.TextField(db_column='student_name', null=True, blank=True)
     gender = models.TextField(db_column='gender1', null=True, blank=True)
@@ -120,11 +88,36 @@ class Student(models.Model):
         managed = False
         db_table = 'student'
 
+    def __str__(self):
+        return f"{self.name} ({self.student_pen})"
+
 
 # =========================
-# FEE MODULE (NEW - APPENDED)
+# ATTENDANCE
 # =========================
+class Attendance(models.Model):
+    id = models.AutoField(primary_key=True)
 
+    student_pen = models.CharField(
+        max_length=100,
+        unique=True,
+        db_column='student_pen'
+    )
+
+    attendance_date = models.DateField(db_column='attendance_date')
+    status = models.CharField(max_length=50, null=True, blank=True)
+    marked_by = models.CharField(max_length=50, null=True, blank=True)
+    created_at = models.DateTimeField(db_column='created_at')
+    remarks = models.CharField(db_column='remarks')
+
+    class Meta:
+        managed = False
+        db_table = 'attendence'
+
+
+# =========================
+# FEE HEADS
+# =========================
 class FeeHead(models.Model):
     id = models.AutoField(primary_key=True)
     fee_code = models.CharField(max_length=30, unique=True)
@@ -140,20 +133,27 @@ class FeeHead(models.Model):
         return self.fee_name
 
 
+# =========================
+# FEE STRUCTURE
+# =========================
 class FeeStructure(models.Model):
     id = models.AutoField(primary_key=True)
+
     class_ref = models.ForeignKey(
         Classes,
         on_delete=models.CASCADE,
         db_column='class_id'
     )
+
     academic_year = models.CharField(max_length=9)
+
     fee_head = models.ForeignKey(
         FeeHead,
         on_delete=models.SET_NULL,
         null=True,
         db_column='fee_head_id'
     )
+
     term_no = models.IntegerField(null=True, blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
 
@@ -162,24 +162,26 @@ class FeeStructure(models.Model):
         db_table = 'fee_structure'
 
 
+# =========================
+# STUDENT FEE
+# =========================
 class StudentFee(models.Model):
     id = models.AutoField(primary_key=True)
-    # student = models.ForeignKey(
-    #     Student,
-    #     on_delete=models.CASCADE,
-    #     db_column='student_id',
-    #     to_field='student_pen'
-    # )
+
+    # keep as integer for safety (existing data)
     student_id = models.IntegerField(db_column='student_id')
 
     academic_year = models.CharField(max_length=9)
+
     fee_head = models.ForeignKey(
         FeeHead,
         on_delete=models.SET_NULL,
         null=True,
         db_column='fee_head_id'
     )
+
     term_no = models.IntegerField(null=True, blank=True)
+
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     paid_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     due_amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -189,22 +191,27 @@ class StudentFee(models.Model):
         db_table = 'student_fee'
 
 
+# =========================
+# FEE PAYMENTS
+# =========================
 class FeePayment(models.Model):
     id = models.AutoField(primary_key=True)
+
     student_fee = models.ForeignKey(
         StudentFee,
         on_delete=models.CASCADE,
         db_column='student_fee_id'
     )
+
     payment_date = models.DateField()
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     payment_mode = models.CharField(max_length=30)
     receipt_no = models.CharField(max_length=50)
-    utr_number = models.CharField(max_length=50, db_column='UTR_Number')
+    utr_number = models.TextField(null=True, blank=True , db_column='UTR_Number')
+
     class Meta:
         managed = False
         db_table = 'fee_payments'
-
 
 
 # =========================
@@ -234,7 +241,7 @@ class ExamMaster(models.Model):
 
 
 # =========================
-# STUDENT MARKS (NEW)
+# STUDENT MARKS
 # =========================
 class StudentMarks(models.Model):
     id = models.AutoField(primary_key=True)
@@ -243,9 +250,18 @@ class StudentMarks(models.Model):
         Student,
         on_delete=models.DO_NOTHING,
         db_column='student_id',
-        db_constraint=False  # 👈 IMPORTANT
+        db_constraint=False
     )
-    class_id = models.IntegerField(db_column='class_id')
+
+    # ✅ UPDATED TO FK
+    class_ref = models.ForeignKey(
+        Classes,
+        on_delete=models.PROTECT,
+        db_column='class_id',
+        null=True,
+        blank=True
+    )
+
     subject_code = models.CharField(max_length=20)
     exam_code = models.CharField(max_length=10)
     academic_year = models.CharField(max_length=9)
@@ -255,50 +271,3 @@ class StudentMarks(models.Model):
     class Meta:
         managed = False
         db_table = 'student_marks'
-
-
-
-
-
-
-# class StudentMarks(models.Model):
-#     id = models.AutoField(primary_key=True)
-#
-#     student_id = models.CharField(
-#         max_length=100,
-#         unique=True,
-#         db_column='student_pen'
-#     )
-#
-#     exam_type = models.CharField(
-#         max_length=100,
-#         unique=True,
-#         db_column='types'
-#     )
-#
-#     date_of_exam = models.DateField(db_column='date_of_exam')
-#
-#     subject = models.CharField(
-#         max_length=50,
-#         null=True,
-#         blank=True,
-#         db_column='subject'
-#     )
-#
-#     max_marks = models.IntegerField(
-#         null=True,
-#         blank=True,
-#         db_column='total_marks'
-#     )
-#
-#     marks = models.IntegerField(
-#         null=True,
-#         blank=True,
-#         db_column='scored_marks'
-#     )
-#
-#     created_at = models.DateTimeField(db_column='created_at')
-#
-#     class Meta:
-#         managed = False
-#         db_table = 'marks'

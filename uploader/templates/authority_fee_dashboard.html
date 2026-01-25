@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Management Fee Dashboar{% endblock %}
+{% block content %}
+
+<h4>Management Fee Dashboar</h4>
+
+<div class="card p-3 mb-3">
+  <div class="row">
+    <div class="col-md-3">
+      <input id="academicYear" class="form-control" placeholder="Academic Year (2024-25)">
+    </div>
+    <div class="col-md-3">
+      <select id="className" class="form-control">
+        <option value="">All Classes</option>
+        {% for c in classes %}
+          <option value="{{ c.class_name }}">{{ c.class_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <select id="feeHead" class="form-control">
+        <option value="">Select Fee</option>
+        {% for f in fee_heads %}
+          <option value="{{ f.id }}">{{ f.fee_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <button class="btn btn-primary w-100" onclick="loadDashboard()">Apply</button>
+    </div>
+  </div>
+</div>
+
+<a id="exportBtn" class="btn btn-success mb-3">Export to Excel</a>
+
+<div class="row mb-3">
+  <div class="col-md-3"><div class="card p-3">Total: ₹<span id="kTotal">0</span></div></div>
+  <div class="col-md-3"><div class="card p-3 text-success">Collected: ₹<span id="kCollected">0</span></div></div>
+  <div class="col-md-3"><div class="card p-3 text-danger">Pending: ₹<span id="kPending">0</span></div></div>
+  <div class="col-md-3"><div class="card p-3">Collection %: <span id="kPercent">0</span>%</div></div>
+</div>
+
+<div class="card p-3 mb-3">
+  <canvas id="feeChart"></canvas>
+</div>
+
+<div class="card p-3 mb-3">
+  <h6>Student Drill Down</h6>
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>ID</th><th>Name</th><th>PEN</th>
+        <th>Total</th><th>Paid</th><th>Due</th>
+      </tr>
+    </thead>
+    <tbody id="studentTable"></tbody>
+  </table>
+</div>
+
+<script>
+let chart;
+
+function loadDashboard() {
+  const y = academicYear.value;
+  const c = className.value;
+  const f = feeHead.value;
+
+  exportBtn.href =
+    `/fees/authority/export/?academic_year=${y}&class_name=${c}&fee_head_id=${f}`;
+
+  fetch(`/fees/authority/chart/?academic_year=${y}&class_name=${c}&fee_head_id=${f}`)
+    .then(r => r.json())
+    .then(d => {
+      kTotal.innerText = d.kpi.total;
+      kCollected.innerText = d.kpi.collected;
+      kPending.innerText = d.kpi.pending;
+      kPercent.innerText = d.kpi.percentage;
+
+      if (chart) chart.destroy();
+      chart = new Chart(feeChart, {
+        type: "bar",
+        data: { labels: d.labels, datasets: [{ data: d.values }] },
+        options: {
+          onClick: (e, items) => {
+            if (!items.length) return;
+            loadStudents(d.labels[items[0].index]);
+          }
+        }
+      });
+    });
+}
+
+function loadStudents(cls) {
+  fetch(`/fees/authority/students/?academic_year=${academicYear.value}&class_name=${cls}&fee_head_id=${feeHead.value}`)
+    .then(r => r.json())
+    .then(d => {
+      studentTable.innerHTML = "";
+      d.rows.forEach(r => {
+        studentTable.innerHTML += `
+          <tr>
+            <td><a href="/fees/authority/student/${r.student_id}/" target="_blank">${r.student_id}</a></td>
+            <td>${r.name}</td>
+            <td>${r.pen}</td>
+            <td>${r.total}</td>
+            <td>${r.paid}</td>
+            <td>${r.due}</td>
+          </tr>`;
+      });
+    });
+}
+</script>
+
+{% endblock %}

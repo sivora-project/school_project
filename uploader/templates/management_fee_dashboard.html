@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-4">
+
+<h3 class="mb-4">📊 Management Fee Dashboard</h3>
+
+<!-- KPI CARDS -->
+<div class="row mb-4">
+  <div class="col-md-4">
+    <div class="card p-3 shadow">
+      <small>Total Expected</small>
+      <h4>₹ {{ kpis.total_expected }}</h4>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card p-3 shadow">
+      <small>Total Collected</small>
+      <h4 class="text-success">₹ {{ kpis.total_paid }}</h4>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card p-3 shadow">
+      <small>Total Pending</small>
+      <h4 class="text-danger">₹ {{ kpis.total_pending }}</h4>
+    </div>
+  </div>
+</div>
+
+<!-- FILTERS -->
+<form method="get" class="row mb-4 align-items-end">
+
+  <div class="col-md-3">
+    <label>Class</label>
+    <select name="class" class="form-select">
+      <option value="">All</option>
+      {% for c in class_list %}
+        <option value="{{ c.id }}"
+          {% if class_filter == c.id|stringformat:"s" %}selected{% endif %}>
+          {{ c.class_name }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="col-md-2">
+    <label>Section</label>
+    <select name="section" class="form-select">
+      <option value="">All</option>
+      {% for s in section_list %}
+        <option value="{{ s }}" {% if section_filter == s %}selected{% endif %}>
+          {{ s }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="col-md-3">
+    <label>Fee Type</label>
+    <select name="fee_type" class="form-select">
+      <option value="">All</option>
+      {% for f in fee_type_list %}
+        <option value="{{ f.id }}"
+          {% if fee_type_filter == f.id|stringformat:"s" %}selected{% endif %}>
+          {{ f.fee_name }}
+        </option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="col-md-3">
+    <label>Search (Name / PEN)</label>
+    <input class="form-control" name="search" value="{{ search|default:'' }}">
+  </div>
+
+  <div class="col-md-1">
+    <button class="btn btn-primary w-100">Apply</button>
+  </div>
+</form>
+
+<!-- PIE CHART -->
+<div class="card shadow mb-4">
+  <div class="card-body">
+    <h5>Class-wise Pending Amount</h5>
+    <div style="height:300px;">
+      <canvas id="pieChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- STUDENT TABLE -->
+<div class="card shadow">
+  <div class="card-body">
+    <h5>Student-wise Pending Amount</h5>
+
+    <table class="table table-hover mt-3">
+      <thead class="table-dark">
+        <tr>
+          <th>Name</th>
+          <th>Class</th>
+          <th>Sec</th>
+          <th>Expected</th>
+          <th>Paid</th>
+          <th>Pending</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in student_due_list %}
+        <tr>
+          <td>{{ s.name }}</td>
+          <td>{{ s.class_name }}</td>
+          <td>{{ s.section }}</td>
+          <td>₹ {{ s.total_expected }}</td>
+          <td class="text-success">₹ {{ s.total_paid }}</td>
+          <td class="fw-bold text-danger">₹ {{ s.pending_amount }}</td>
+          <td>
+            <a class="btn btn-sm btn-outline-primary">Drill</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center">No pending data</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</div>
+
+<!-- CHART JS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const ctx = document.getElementById("pieChart");
+
+const labels = {{ pie_labels|safe }};
+const dataVals = {{ pie_data|safe }};
+
+if (ctx && labels.length > 0) {
+  new Chart(ctx, {
+    type: "pie",
+    data: {
+      labels: labels,
+      datasets: [{
+        data: dataVals,
+        backgroundColor: [
+          "#4e73df", "#1cc88a", "#36b9cc",
+          "#f6c23e", "#e74a3b", "#858796"
+        ]
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false
+    }
+  });
+}
+</script>
+
+{% endblock %}

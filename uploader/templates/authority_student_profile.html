@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Student Fee Profile{% endblock %}
+{% block content %}
+
+<h4>Student Fee Profile</h4>
+
+<div class="card p-3 mb-3">
+  <h5>{{ student.name }}</h5>
+  <p>PEN: {{ student.student_pen }}</p>
+  <p>Class: {{ student.student_class }}</p>
+</div>
+
+<div class="card p-3">
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Fee</th><th>Total</th><th>Paid</th><th>Due</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td>{{ r.fee }}</td>
+        <td>{{ r.total }}</td>
+        <td>{{ r.paid }}</td>
+        <td>{{ r.due }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

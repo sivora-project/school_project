@@ -40,12 +40,23 @@
         <!-- Student Basic Info -->
         <div class="card mb-3">
             <div class="card-body">
-                <h4>{{ student.name }}</h4>
-                <div class="row">
-                    <div class="col-md-6"><b>PEN / Roll:</b> {{ student.student_pen }}</div>
-                    <div class="col-md-6"><b>Father Name:</b> {{ student.father_name }}</div>
-                </div>
-            </div>
+    <h4>{{ student.name }}</h4>
+    <div class="row">
+        <div class="col-md-4">
+            <b>PEN / Roll:</b> {{ student.student_pen }}
+        </div>
+        <div class="col-md-4">
+            <b>Father Name:</b> {{ student.father_name }}
+        </div>
+        <div class="col-md-4">
+            <b>Class:</b>
+            {{ student.class_ref.class_name }}
+            {% if student.class_ref.section %}
+                - {{ student.class_ref.section }}
+            {% endif %}
+        </div>
+    </div>
+</div>
         </div>
 
         {% if selected_month %}

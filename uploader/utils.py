@@ -10,7 +10,7 @@ from .models import Attendance, AcademicCalendar, StudentMarks
 # =========================
 
 def get_student_attendance_summary(student_id, month=None):
-    attendance_qs = Attendance.objects.filter(Student_pen=student_id)
+    attendance_qs = Attendance.objects.filter(student_pen=student_id)
     calendar_qs = AcademicCalendar.objects.filter(is_working_day=True)
 
     if month:
@@ -33,7 +33,7 @@ def get_student_attendance_summary(student_id, month=None):
 
 def get_longest_attendance_streak(student_id):
     records = Attendance.objects.filter(
-        Student_pen=student_id,
+        student_pen=student_id,
         status='P'
     ).order_by('attendance_date')
 
@@ -101,7 +101,7 @@ def get_regular_absent_students(attendance_qs):
     student_dates = defaultdict(list)
 
     for att in attendance_qs.filter(status='A').order_by('attendance_date'):
-        student_dates[att.Student_pen].append(att.attendance_date)
+        student_dates[att.student_pen].append(att.attendance_date)
 
     result = {}
 
@@ -157,7 +157,7 @@ def get_continuous_absent_summary(attendance_qs, students_qs):
     # Map attendance by student (latest first)
     attendance_map = defaultdict(list)
     for a in attendance_qs.order_by('-attendance_date'):
-        attendance_map[a.Student_pen].append(a)
+        attendance_map[a.student_pen].append(a)
 
     summary = defaultdict(lambda: {
         'gt2': 0, 'gt3': 0, 'gt4': 0, 'gt5': 0

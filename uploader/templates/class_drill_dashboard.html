@@ -1,19 +1,47 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h3>Class {{ class_name }} - {{ section }} (Month {{ month }})</h3>
+<div class="container mt-4">
 
-<table border="1" cellpadding="8">
-<tr><th>ID</th><th>Name</th><th>Status</th></tr>
-{% for s in student_rows %}
-<tr>
-  <td>{{ s.student_pen }}</td>
-  <td>{{ s.name }}</td>
-  <td>{{ s.status }}</td>
-</tr>
-{% endfor %}
-</table>
+  <h3>
+    Class {{ class_name }} ({{ section }})
+    {% if snapshot_mode == "day" %}
+      – {{ snapshot_date }}
+    {% else %}
+      – {{ snapshot_month }}
+    {% endif %}
+  </h3>
 
-<a href="{% url 'school_dashboard' %}?month={{ month }}">⬅ Back</a>
+  <table class="table table-bordered mt-3">
+    <thead class="table-light">
+      <tr>
+        <th>PEN</th>
+        <th>Name</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in student_rows %}
+      <tr>
+        <td>{{ s.student_pen }}</td>
+        <td>{{ s.name }}</td>
+        <td>
+          {% if s.status == "P" %}
+            <span class="text-success fw-bold">Present</span>
+          {% else %}
+            <span class="text-danger fw-bold">Absent</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <a href="{% url 'school_dashboard' %}"
+     class="btn btn-secondary mt-3">
+    ← Back to Dashboard
+  </a>
+
+</div>
 
 {% endblock %}

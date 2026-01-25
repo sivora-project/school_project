@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block content %}
+
+<html>
+<head>
+    <title>Mark Attendance</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: Inter, Segoe UI, sans-serif;
+            background: #f4f6f9;
+            padding: 20px;
+        }
+
+        .card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 14px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+            margin-bottom: 20px;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 1.2fr 3fr;
+            gap: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f1f3f6;
+            padding: 12px;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .present-row { background: #e8f8f2; }
+        .absent-row { background: #fdecea; }
+
+        button {
+            background: #4e73df;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        button[disabled] {
+            background: #ccc;
+        }
+
+        textarea {
+            width: 100%;
+            border-radius: 6px;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #1cc88a;
+            color: #fff;
+            padding: 14px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.4s ease;
+            z-index: 9999;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .toast.error {
+            background: #e74a3b;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>Mark Attendance</h2>
+
+<!-- LOAD (GET) -->
+<div class="card">
+    <form method="get">
+        Date:
+        <input type="date" name="attendance_date"
+               value="{{ attendance_date|date:'Y-m-d' }}">
+
+        Class:
+        <select name="class_id" required>
+            <option value="">Select</option>
+            {% for c in classes %}
+            <option value="{{ c.id }}"
+                {% if c.id|stringformat:"s" == selected_class %}selected{% endif %}>
+                {{ c.class_name }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <button type="submit">Load</button>
+    </form>
+</div>
+
+{% if selected_class %}
+<div class="layout">
+
+    <!-- SUMMARY -->
+    <div class="card">
+        <h3>Attendance Summary</h3>
+        <canvas id="attendancePie"></canvas>
+    </div>
+
+    <!-- TABLE -->
+    <div class="card">
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="class_id" value="{{ selected_class }}">
+            <input type="hidden" name="attendance_date"
+                   value="{{ attendance_date|date:'Y-m-d' }}">
+
+            <table>
+                <tr>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th>Remarks</th>
+                    <th>Monthly %</th>
+                    <th>Academic %</th>
+                </tr>
+
+                {% for s in students %}
+                <tr class="{% if s.saved_status == 'Absent' %}absent-row{% else %}present-row{% endif %}">
+                    <td>{{ s.name }}</td>
+                    <td>
+                        <input type="radio" name="status_{{ s.student_id }}" value="Present"
+                               {% if s.saved_status == "Present" %}checked{% endif %}> P
+                        <input type="radio" name="status_{{ s.student_id }}" value="Absent"
+                               {% if s.saved_status == "Absent" %}checked{% endif %}> A
+                    </td>
+                    <td>
+                        <textarea name="remarks_{{ s.student_id }}">{{ s.remarks }}</textarea>
+                    </td>
+                    <td>{{ s.monthly_percentage }}%</td>
+                    <td>{{ s.yearly_percentage }}%</td>
+                </tr>
+                {% endfor %}
+            </table>
+
+            <br>
+            {% if is_working_day %}
+                <button type="submit">Save Attendance</button>
+            {% else %}
+                <button type="button" disabled>Non-working Day</button>
+            {% endif %}
+        </form>
+    </div>
+
+</div>
+
+<script>
+new Chart(document.getElementById("attendancePie"), {
+    type: "doughnut",
+    data: {
+        labels: ["Present", "Absent"],
+        datasets: [{
+            data: [{{ present_count }}, {{ absent_count }}],
+            backgroundColor: ["#1cc88a", "#e74a3b"]
+        }]
+    }
+});
+</script>
+{% endif %}
+
+{% if messages %}
+<div id="toast-container">
+    {% for message in messages %}
+    <div class="toast {% if message.tags == 'error' %}error{% endif %}">
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+document.querySelectorAll(".toast").forEach((toast) => {
+    setTimeout(() => toast.classList.add("show"), 100);
+    setTimeout(() => toast.classList.remove("show"), 2500);
+});
+</script>
+{% endif %}
+
+</body>
+</html>
+
+{% endblock %}

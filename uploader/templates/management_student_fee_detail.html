@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-4">
+
+<h3>Student Fee Details</h3>
+
+<div class="card shadow p-3 mb-3">
+  <strong>{{ student.name }}</strong><br>
+    Class {{ student.class_ref.class_name }} - {{ student.section }}<br>
+  PEN: {{ student.student_pen }}
+</div>
+
+<div class="row mb-3">
+  <div class="col-md-4"><b>Expected:</b> ₹ {{ summary.total_expected }}</div>
+  <div class="col-md-4 text-success"><b>Paid:</b> ₹ {{ summary.total_paid }}</div>
+  <div class="col-md-4 text-danger"><b>Pending:</b> ₹ {{ summary.pending }}</div>
+</div>
+
+<table class="table table-bordered">
+  <thead class="table-dark">
+    <tr>
+      <th>Fee Head</th>
+      <th>Expected</th>
+      <th>Paid</th>
+      <th>Pending</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for fee in fee_rows %}
+    <tr>
+      <td>{{ fee.fee_head }}</td>
+      <td>₹ {{ fee.total_amount }}</td>
+      <td class="text-success">₹ {{ fee.paid_amount }}</td>
+      <td class="text-danger">₹ {{ fee.due_amount }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<a href="{% url 'management_fee_dashboard' %}" class="btn btn-secondary mt-3">
+  ← Back to Dashboard
+</a>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<h3>Regular Absentees – {{ class_name }} ({{ snapshot_month }})</h3>
+
+<table class="table table-bordered">
+<tr><th>PEN</th><th>Name</th><th>Absent Days</th></tr>
+{% for r in rows %}
+<tr>
+<td>{{ r.student_pen }}</td>
+<td>{{ r.name }}</td>
+<td class="text-danger"><b>{{ r.absent_days }}</b></td>
+</tr>
+{% endfor %}
+</table>
+{% endblock %}

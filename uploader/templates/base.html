@@ -14,7 +14,7 @@
 <body class="bg-light">
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4">
-    <a class="navbar-brand fw-bold" href="#">
+    <a class="navbar-brand fw-bold" href="{% url 'dashboard' %}">
         🏫 School System
     </a>
 
@@ -36,27 +36,18 @@
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'school_dashboard' %}">School Dashboard</a>
             </li>
-
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'class_performance_dashboard' %}">
+                    Performance Dashboard
+                </a>
+            </li>
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'student_info' %}">Student Info</a>
             </li>
 
-            <!-- ATTENDANCE -->
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" role="button"
-                   data-bs-toggle="dropdown">
-                    Attendance
-                </a>
-                <ul class="dropdown-menu">
-                    <li>
-                        <a class="dropdown-item" href="{% url 'dashboard' %}">
-                            Attendance Dashboard
-                        </a>
-                    </li>
-                </ul>
-            </li>
 
-            <!-- FEES (STAFF ONLY) -->
+
+            <!-- FEES (PAYMENT – STAFF / ACCOUNTANT / CEO) -->
             {% if request.session.role == "CEO" or request.session.role == "ACCOUNTANT" %}
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" role="button"
@@ -73,33 +64,30 @@
             </li>
             {% endif %}
 
-            <!-- FEES (AUTHORITY) -->
-            {% if request.session.role == "ADMIN" or request.session.role == "PRINCIPAL" or request.session.role == "MANAGEMENT" %}
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" role="button"
-                   data-bs-toggle="dropdown">
-                    Fee Reports
+            <!-- ✅ AUTHORITY DASHBOARD (VISIBLE TO ALL ROLES) -->
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'management_fee_dashboard' %}">
+                    Management Fee Dashboard
                 </a>
-                <ul class="dropdown-menu">
-                    <li>
-                        <a class="dropdown-item" href="{% url 'fee_dashboard' %}">
-                            Fee Dashboard
-                        </a>
-                    </li>
-                </ul>
             </li>
-            {% endif %}
+
+            <!-- ✅ ATTENDE MARKING  -->
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'mark_attendance' %}">
+                    Mark_attendance
+                </a>
+            </li>
 
             <!-- DATA -->
+
+
             <li class="nav-item">
-                <a class="nav-link" href="{% url 'data_analysis' %}">Data Analysis</a>
-            </li>
-            <li>
                 <a class="nav-link" href="{% url 'daily_collection_report' %}">
-    Daily Collection Report
-</a>
+                    Daily Collection Report
+                </a>
             </li>
-            <!-- ADMIN -->
+
+            <!-- ADMIN ONLY -->
             {% if request.session.role == "ADMIN" %}
             <li class="nav-item">
                 <a class="nav-link" href="{% url 'update_student' %}">
