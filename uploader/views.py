@@ -1224,7 +1224,7 @@ def class_performance_dashboard(request):
     exams = ExamMaster.objects.all().order_by("term_no", "exam_code")
     return render(
         request,
-        "dashboard/class_performance_dashboard.html",
+        "Dashboard/class_performance_dashboard.html",
         {"exams": exams}
     )
 
